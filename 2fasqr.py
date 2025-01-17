@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 def load_backup(file_path):
-    """Carga y valida el archivo de respaldo."""
+    """Load and validate the backup file."""
     with open(file_path) as f:
         backup = json.load(f)
     if backup.get("schemaVersion") != 4:
@@ -14,11 +14,11 @@ def load_backup(file_path):
     return backup
 
 def sanitize_filename(name):
-    """Genera un nombre de archivo seguro."""
+    """Generate a safe filename by removing invalid characters."""
     return "".join(c for c in name if c.isalnum())
 
 def generate_qr_codes(backup, output_dir):
-    """Genera códigos QR y enlaces TOTP a partir del respaldo."""
+    """Generate QR codes and TOTP links from the backup."""
     links_list = []
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -31,27 +31,27 @@ def generate_qr_codes(backup, output_dir):
         digits = service["otp"]["digits"]
         period = service["otp"]["period"]
 
-        # Crear enlace TOTP
+        # Build the TOTP link
         link = (
             f'otpauth://totp/{name}:{account}?'
             f'secret={secret}&issuer={issuer}&algorithm={algorithm}&digits={digits}&period={period}'
         )
         links_list.append(link)
 
-        # Crear y guardar el código QR
+        # Create and save the QR code
         filename = sanitize_filename(f'{service["name"]}_{account or "no_account"}_{issuer or "no_issuer"}')
         qrcode.make(link).save(f"{output_dir}/{filename}.png")
 
     return links_list
 
 def save_links(links, output_file):
-    """Guarda los enlaces TOTP en un archivo de texto."""
+    """Save TOTP links to a text file."""
     with open(output_file, "w") as f:
         f.write("\n".join(links))
 
 def main():
     if len(sys.argv) != 2:
-        print(f"Uso: {sys.argv[0]} <ruta_al_archivo_2fas>")
+        print(f"Usage: {sys.argv[0]} <path_to_2fas_file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -62,8 +62,8 @@ def main():
     links = generate_qr_codes(backup, output_dir)
     save_links(links, links_file)
 
-    print(f"Códigos QR guardados en {output_dir}")
-    print(f"Enlaces TOTP guardados en {links_file}")
+    print(f"QR codes saved to {output_dir}")
+    print(f"TOTP links saved to {links_file}")
 
 if __name__ == "__main__":
     main()
